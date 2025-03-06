@@ -39,7 +39,7 @@ export const generateAIInsights = async (industry) => {
 
 export async function getIndustryInsights() {
     const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized")
+    if (!userId) throw new Error("Unauthorized");
 
     const user = await db.user.findUnique({
         where: {
@@ -52,8 +52,13 @@ export async function getIndustryInsights() {
 
     if (!user) throw new Error("User Not Found");
 
+    if (!user.industry) {
+        console.warn("User industry is not set. Skipping insights generation.");
+        return null; // ⚡ Return null instead of throwing an error
+    }
+
     if (!user.industryInsight) {
-        const insights = await generateAIInsights(user.industry)
+        const insights = await generateAIInsights(user.industry);
 
         const industryInsight = await db.industryInsight.create({
             data: {
