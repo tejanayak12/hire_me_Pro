@@ -10,18 +10,13 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
+  const { userId, redirectToSignIn } = await auth();
 
   console.log("Middleware - userId:", userId, "Route:", req.nextUrl.pathname);
 
-  if (!userId && isProtectedRoute(req)) {
-    console.log("Middleware - No user found, redirecting to sign-in...");
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
-
-  if (userId && req.nextUrl.pathname.startsWith("/sign-in")) {
-    console.log("Middleware - Already signed in, redirecting to dashboard...");
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+  if (!userId && isProtectedRoute(req.nextUrl.pathname)) {
+    console.log("Middleware - No user found, redirecting...");
+    return await redirectToSignIn(); // Ensure redirection works
   }
 
   return NextResponse.next();
@@ -29,7 +24,9 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
+    // Skip Next.js internals and static assets, unless found in search params
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };
