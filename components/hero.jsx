@@ -5,11 +5,11 @@ import { Button } from "./ui/button";
 import Image from "next/image";
 
 const HeroSection = () => {
-  const imageRef = useRef(null); 
+  const imageRef = useRef(null);
 
   useEffect(() => {
     const imageElement = imageRef.current;
-    if (!imageElement) return; 
+    if (!imageElement) return;
 
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -46,12 +46,12 @@ const HeroSection = () => {
           <Link href="/dashboard">
             <Button size="lg" className="px-8">Get Started</Button>
           </Link>
-          <Link href="https://tejanayak12.github.io/Portfolio/">
+          <Link href="https://tejame.vercel.app">
             <Button size="lg" className="px-8" variant="outline">Check out my Portfolio</Button>
           </Link>
         </div>
 
-        
+
         <div className="hero-image-wrapper mt-5 md:mt-0">
           <div ref={imageRef} className="hero-image">
             <Image

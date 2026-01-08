@@ -5,8 +5,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash"
-})
+    model: "gemini-2.0-flash",
+});
 
 
 export async function generateQuiz() {
@@ -51,10 +51,40 @@ export async function generateQuiz() {
 
         return quiz.questions;
     } catch (error) {
-        console.error("Error generating quiz:", error);
-        throw new Error("Failed to generate quiz questions");
-    }
+        console.error("Error generating quiz via AI:", error.message);
 
+        // Fallback quiz for tech-it-services (your current industry)
+        if (user.industry === "tech-it-services" || user.industry === "Financial Services") {
+            return [
+                {
+                    question: "What does 'SDLC' stand for?",
+                    options: ["Software Development Life Cycle", "System Design Logic Center", "Secure Data Link Connection", "Static Database Loading Component"],
+                    correctAnswer: "Software Development Life Cycle",
+                    explanation: "SDLC is the process used by the software industry to design, develop, and test high-quality software."
+                },
+                {
+                    question: "Which of the following is NOT a common IT service delivery framework?",
+                    options: ["ITIL", "COBIT", "Six Sigma", "HTML"],
+                    correctAnswer: "HTML",
+                    explanation: "HTML is a markup language for web pages, not a framework for IT service delivery."
+                },
+                {
+                    question: "In ITIL, what is the goal of 'Incident Management'?",
+                    options: ["To prevent future problems", "To restore normal service as quickly as possible", "To manage change requests", "To document new features"],
+                    correctAnswer: "To restore normal service as quickly as possible",
+                    explanation: "Incident Management focuses on getting services back online with minimal disruption."
+                },
+                {
+                    question: "What is 'Cloud Computing'?",
+                    options: ["Storing data on physical external hard drives", "Delivering computing services over the internet", "Connecting computers via Bluetooth", "Analyzing weather patterns"],
+                    correctAnswer: "Delivering computing services over the internet",
+                    explanation: "Cloud computing provides on-demand access to servers, storage, and databases over the web."
+                }
+            ];
+        }
+
+        throw new Error("Failed to generate quiz questions. AI is currently busy, please try again in a minute.");
+    }
 }
 
 export async function saveQuizResult({ questions, answers, score }) {

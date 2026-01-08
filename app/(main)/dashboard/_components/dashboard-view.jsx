@@ -10,6 +10,23 @@ import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar, CartesianGri
 
 
 const DashboardView = ({ insights }) => {
+    // If no insights or if it's an empty placeholder (no salary data)
+    if (!insights || !insights.salaryRanges || insights.salaryRanges.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-muted-foreground bg-background border rounded-xl p-8 shadow-sm">
+                <Brain className="h-16 w-16 animate-pulse text-primary/50" />
+                <div className="text-center space-y-2">
+                    <h3 className="text-xl font-semibold text-foreground">Generating Your Industry Insights</h3>
+                    <p className="max-w-md">
+                        We're currently preparing your personalized industry data. This usually takes about 30 seconds.
+                    </p>
+                    <p className="text-sm italic">
+                        The AI server is at its rate limit. Please wait 1 minute and refresh this page.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     const salaryData = insights.salaryRanges.map((range) => ({
         name: range.role,
@@ -19,6 +36,7 @@ const DashboardView = ({ insights }) => {
     }));
 
     const getDemandLeveColor = (level) => {
+        if (!level) return "bg-gray-500";
         switch (level.toLowerCase()) {
             case "high":
                 return "bg-green-500";
@@ -32,12 +50,14 @@ const DashboardView = ({ insights }) => {
     }
 
     const getMarketOutlookInfo = (outlook) => {
+        if (!outlook) return { icon: LineChart, color: "text-gray-500" };
         switch (outlook.toLowerCase()) {
             case "positive":
                 return { icon: TrendingUp, color: "text-green-500" };
             case "neutral":
                 return { icon: LineChart, color: "text-yellow-500" };
-            case "nagative":
+            case "negative":
+            case "nagative": // Handling typo in DB if any
                 return { icon: TrendingDown, color: "text-red-500" };
             default:
                 return { icon: LineChart, color: "text-gray-500" };
@@ -47,12 +67,13 @@ const DashboardView = ({ insights }) => {
     const OutlookIcon = getMarketOutlookInfo(insights.marketOutlook).icon;
     const OutlookColor = getMarketOutlookInfo(insights.marketOutlook).color;
 
-    const lastUpdated = format(new Date(insights.lastUpdated), 'dd/mm/yyyy');
+    const lastUpdated = insights.lastUpdated
+        ? format(new Date(insights.lastUpdated), 'dd/MM/yyyy')
+        : "Pending";
 
-    const nextUpdateDistance = formatDistanceToNow(
-        new Date(insights.nextUpdate),
-        { addSuffix: true }
-    )
+    const nextUpdateDistance = insights.nextUpdate
+        ? formatDistanceToNow(new Date(insights.nextUpdate), { addSuffix: true })
+        : "soon";
 
     return (
         <div className='space-y-6'>
@@ -126,36 +147,41 @@ const DashboardView = ({ insights }) => {
                 </CardHeader>
                 <CardContent>
                     <div className='h-[400px]'>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={salaryData}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip content={({ active, payload, label }) => {
-                                    if (active && payload && payload.length) {
-                                        return (
-                                            <div className='bg-background border rounded-lg p-2 shadow-md'>
-                                                <p className='font-medium'>{label}</p>
-                                                {payload.map((item) => (
-                                                    <p key={item.name} className='text-sm'>
-                                                        {item.name}: ${item.value}K
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        );
-                                    }
-
-                                    return null
-
-                                }} />
-                                <Bar dataKey="min" fill='#9a4a3b8' name="Min Salary (K)" />
-                                <Bar dataKey="median" fill='#64748b' name="Median Salary (K)" />
-                                <Bar dataKey="max" fill='#475569' name="Max Salary (K)" />
-
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {salaryData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={salaryData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className='bg-background border rounded-lg p-2 shadow-md'>
+                                                    <p className='font-medium'>{label}</p>
+                                                    {payload.map((item) => (
+                                                        <p key={item.name} className='text-sm'>
+                                                            {item.name}: ${item.value}K
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }} />
+                                    <Bar dataKey="min" fill='#94a3b8' name="Min Salary (K)" />
+                                    <Bar dataKey="median" fill='#64748b' name="Median Salary (K)" />
+                                    <Bar dataKey="max" fill='#475569' name="Max Salary (K)" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-full flex-col gap-2 text-muted-foreground">
+                                <Brain className="h-10 w-10 animate-pulse" />
+                                <p>AI is generating your industry insights...</p>
+                                <p className="text-xs text-center px-10">
+                                    (This may take a minute if the AI server is busy. Please refresh in a moment.)
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

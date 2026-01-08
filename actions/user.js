@@ -29,17 +29,36 @@ export async function updateUser(data) {
                     },
                 });
 
-                // if industry doesn't exist, create it
+                // if industry doesn't exist, try to create it
                 if (!industryInsight) {
-                    const insights = await generateAIInsights(data.industry)
+                    try {
+                        const insights = await generateAIInsights(data.industry);
 
-                    industryInsight = await db.industryInsight.create({
-                        data: {
-                            industry: data.industry,
-                            ...insights,
-                            nextUpdate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                        }
-                    });
+                        industryInsight = await tx.industryInsight.create({
+                            data: {
+                                industry: data.industry,
+                                ...insights,
+                                nextUpdate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                            }
+                        });
+                    } catch (aiError) {
+                        console.error("AI Insights failed during onboarding, creating placeholder:", aiError.message);
+
+                        // Create a placeholder record to satisfy the foreign key constraint
+                        industryInsight = await tx.industryInsight.create({
+                            data: {
+                                industry: data.industry,
+                                salaryRanges: [],
+                                growthRate: 0,
+                                demandLevel: "MEDIUM",
+                                topSkills: [],
+                                marketOutlook: "NEUTRAL",
+                                keyTrends: [],
+                                recommendedSkills: [],
+                                nextUpdate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                            }
+                        });
+                    }
                 }
 
                 // update the user
@@ -82,7 +101,7 @@ export async function getUserOnboardingStatus() {
         },
     });
 
-    if (!user) throw new Error("User Not Found");
+    if (!user) return { isOnboarded: false };
 
     try {
         const user = await db.user.findUnique({
