@@ -105,11 +105,10 @@ export async function getIndustryInsights() {
         }
     });
 
-    if (!user) throw new Error("User Not Found");
+    if (!user) return null;
 
     if (!user.industry) {
-        console.warn("User industry is not set. Skipping insights generation.");
-        return null; // ⚡ Return null instead of throwing an error
+        return null;
     }
 
     if (!user.industryInsight || user.industryInsight.salaryRanges.length === 0) {

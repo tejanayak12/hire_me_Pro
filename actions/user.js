@@ -10,13 +10,19 @@ export async function updateUser(data) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized")
 
-    const user = await db.user.findUnique({
+    let user = await db.user.findUnique({
         where: {
             clerkUserId: userId,
         },
     });
 
-    if (!user) throw new Error("User Not Found")
+    if (!user) {
+        // Fallback to checkUser to create the user if it doesn't exist yet
+        const { checkUser } = require("@/lib/CheckUser");
+        user = await checkUser();
+    }
+
+    if (!user) throw new Error("User Not Found");
 
     try {
 
